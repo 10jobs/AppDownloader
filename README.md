@@ -4,7 +4,7 @@
 
 ## 주요 기능
 - 일반 사용자: 앱 목록/버전 조회, APK 다운로드, 공지 조회
-- 관리자 1계정: 앱 종류 관리, APK 업로드/덮어쓰기, 공지 등록/수정/노출 전환
+- 관리자 1계정: 앱 종류 관리, APK 업로드/덮어쓰기/버전 삭제, 공지 등록/수정/노출 전환
 - 로그: 관리자 감사 로그 + 다운로드 로그 DB 저장
 
 ## 기술 스택
@@ -43,6 +43,11 @@ uv run uvicorn appdownloader.main:app --host 0.0.0.0 --port 8080
 uv run appdownloader
 ```
 
+Windows에서 8080 포트 바인딩 오류(`WinError 10013`)가 발생하면 포트를 5000으로 변경:
+```bash
+uv run uvicorn appdownloader.main:app --host 0.0.0.0 --port 5000
+```
+
 ## 테스트
 ```bash
 uv run pytest -q
@@ -56,8 +61,10 @@ uv run pytest -q
 - 사용자 홈: `/`
 - 관리자 로그인: `/admin/login`
 - 관리자 대시보드: `/admin`
+- APK 업로드/버전 삭제: `/admin/apks/upload`
 
 ## 주의사항
 - 1차 배포 기준 HTTP-only(사내망 전용)
 - 방화벽/IP 제한은 서버에서 별도 설정 필요
 - 기본 관리자 비밀번호는 반드시 변경
+- 로그 저장 위치(DB): `data/app.db` (`audit_logs`, `download_logs`)
