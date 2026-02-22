@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 
 def test_admin_login_and_guard(app_ctx):
@@ -165,3 +166,68 @@ def test_duplicate_upload_overwrite_flow(app_ctx):
         assert version.current_file_id == files[1].id
     finally:
         db.close()
+
+
+def test_delete_uploaded_version_flow(app_ctx):
+    client, db_mod, models = app_ctx
+
+    login = client.post(
+        "/admin/login",
+        data={"username": "admin", "password": "admin1234"},
+        follow_redirects=False,
+    )
+    assert login.status_code == 303
+
+    client.post(
+        "/admin/apps",
+        data={"name": "Delete App", "slug": "delete-app", "is_active": "on"},
+        follow_redirects=False,
+    )
+
+    db = db_mod.SessionLocal()
+    try:
+        app_type = db.query(models.AppType).filter(models.AppType.slug == "delete-app").first()
+        assert app_type is not None
+        app_type_id = app_type.id
+    finally:
+        db.close()
+
+    payload = b"PK\x03\x04to-delete-version"
+    upload = client.post(
+        "/admin/apks/upload",
+        data={"app_type_id": str(app_type_id), "version": "9.9.9", "release_note": "delete me"},
+        files={"apk_file": ("delete.apk", payload, "application/vnd.android.package-archive")},
+    )
+    assert upload.status_code == 200
+
+    db = db_mod.SessionLocal()
+    try:
+        version = (
+            db.query(models.ApkVersion)
+            .filter(models.ApkVersion.app_type_id == app_type_id, models.ApkVersion.version == "9.9.9")
+            .first()
+        )
+        assert version is not None
+        version_id = version.id
+
+        apk_file = db.query(models.ApkFile).filter(models.ApkFile.apk_version_id == version_id).first()
+        assert apk_file is not None
+        stored_path = apk_file.stored_path
+        file_id = apk_file.id
+    finally:
+        db.close()
+
+    delete_res = client.post("/admin/apks/delete", data={"apk_version_id": str(version_id)})
+    assert delete_res.status_code == 200
+    assert "삭제했습니다" in delete_res.text
+
+    db = db_mod.SessionLocal()
+    try:
+        deleted_version = db.query(models.ApkVersion).filter(models.ApkVersion.id == version_id).first()
+        deleted_file = db.query(models.ApkFile).filter(models.ApkFile.id == file_id).first()
+        assert deleted_version is None
+        assert deleted_file is None
+    finally:
+        db.close()
+
+    assert not Path(stored_path).exists()

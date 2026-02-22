@@ -37,7 +37,7 @@
   {% if versions %}
   <table>
     <thead>
-      <tr><th>앱</th><th>버전</th><th>리비전</th><th>파일명</th><th>크기(bytes)</th><th>등록시각</th></tr>
+      <tr><th>앱</th><th>버전</th><th>리비전</th><th>파일명</th><th>크기(bytes)</th><th>등록시각</th><th>관리</th></tr>
     </thead>
     <tbody>
       {% for v in versions %}
@@ -48,6 +48,12 @@
         <td>{{ v.current_file.original_filename if v.current_file else '-' }}</td>
         <td>{{ v.current_file.file_size if v.current_file else '-' }}</td>
         <td>{{ v.updated_at }}</td>
+        <td>
+          <form method="post" action="/admin/apks/delete" onsubmit="return confirm('해당 버전을 삭제하시겠습니까?');">
+            <input type="hidden" name="apk_version_id" value="{{ v.id }}" />
+            <button class="btn danger" type="submit">버전 삭제</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
     </tbody>

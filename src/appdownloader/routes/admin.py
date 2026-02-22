@@ -77,6 +77,20 @@ def store_file_bytes(base_dir: Path, app_slug: str, version: str, revision_no: i
     return str(target_path)
 
 
+def remove_apk_version_files(version: ApkVersion) -> tuple[int, int]:
+    removed = 0
+    failed = 0
+    for file_item in version.files:
+        file_path = Path(file_item.stored_path)
+        try:
+            file_path.unlink(missing_ok=True)
+            removed += 1
+        except OSError:
+            failed += 1
+
+    return removed, failed
+
+
 @router.get("/login")
 def admin_login(request: Request, db: Session = Depends(get_db)):
     current = get_session_admin(db, request.session)
@@ -465,6 +479,50 @@ def overwrite_apk(
     tmp_path.unlink(missing_ok=True)
     request.session.pop("pending_overwrite", None)
     return render_upload_page(request, db, message="기존 버전을 새 리비전으로 덮어썼습니다.")
+
+
+@router.post("/apks/delete")
+def delete_apk_version(
+    request: Request,
+    apk_version_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    current = admin_or_redirect(request, db)
+    if isinstance(current, RedirectResponse):
+        return current
+
+    version = (
+        db.query(ApkVersion)
+        .options(joinedload(ApkVersion.files), joinedload(ApkVersion.app_type))
+        .filter(ApkVersion.id == apk_version_id)
+        .first()
+    )
+    if not version:
+        return render_upload_page(request, db, error="삭제할 버전을 찾을 수 없습니다.")
+
+    version_id = version.id
+    app_name = version.app_type.name
+    version_text = version.version
+
+    removed_count, failed_count = remove_apk_version_files(version)
+    db.delete(version)
+    db.commit()
+
+    write_audit_log(
+        db,
+        actor_type="admin",
+        actor_id=current.id,
+        action="delete_apk_version",
+        target_type="apk_version",
+        target_id=version_id,
+        ip=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    message = f"{app_name} {version_text} 버전을 삭제했습니다. (파일 {removed_count}개 정리)"
+    if failed_count:
+        message += f" 파일 {failed_count}개는 수동 정리가 필요합니다."
+    return render_upload_page(request, db, message=message)
 
 
 @router.get("/notices")
