@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>공지 관리</h1>
+  {% if message %}<p class="ok">{{ message }}</p>{% endif %}
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/admin/notices" class="stack">
+    <input type="hidden" name="action" value="create" />
+    <label>제목<input name="title" required /></label>
+    <label>내용<textarea name="content" rows="5" required></textarea></label>
+    <label><input type="checkbox" name="is_pinned" /> 고정 공지</label>
+    <label><input type="checkbox" name="is_visible" checked /> 사용자 노출</label>
+    <button class="btn" type="submit">공지 등록</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>공지 목록</h2>
+  {% if notices %}
+  {% for n in notices %}
+  <div class="notice-admin-item">
+    <form method="post" action="/admin/notices" class="stack compact">
+      <input type="hidden" name="action" value="update" />
+      <input type="hidden" name="notice_id" value="{{ n.id }}" />
+      <label>제목<input name="title" value="{{ n.title }}" required /></label>
+      <label>내용<textarea name="content" rows="4" required>{{ n.content }}</textarea></label>
+      <label><input type="checkbox" name="is_pinned" {% if n.is_pinned %}checked{% endif %} /> 고정</label>
+      <label><input type="checkbox" name="is_visible" {% if n.is_visible %}checked{% endif %} /> 노출</label>
+      <div class="actions">
+        <button class="btn" type="submit">수정 저장</button>
+      </div>
+    </form>
+
+    <form method="post" action="/admin/notices">
+      <input type="hidden" name="action" value="toggle_visibility" />
+      <input type="hidden" name="notice_id" value="{{ n.id }}" />
+      <button class="btn danger" type="submit">{{ '노출 끄기' if n.is_visible else '노출 켜기' }}</button>
+    </form>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p class="muted">공지 없음</p>
+  {% endif %}
+</section>
+{% endblock %}

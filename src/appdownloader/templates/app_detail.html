@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>{{ app_type.name }}</h1>
+  <p class="muted">{{ app_type.description or '설명 없음' }}</p>
+
+  {% if versions %}
+  <table>
+    <thead>
+      <tr>
+        <th>버전</th>
+        <th>릴리즈 노트</th>
+        <th>최신 리비전</th>
+        <th>다운로드</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in versions %}
+      <tr>
+        <td>{{ v.version }}</td>
+        <td>{{ v.release_note or '-' }}</td>
+        <td>{% if v.current_file %}r{{ v.current_file.revision_no }}{% else %}-{% endif %}</td>
+        <td>
+          {% if v.current_file %}
+          <a class="btn" href="/download/{{ v.current_file.id }}">다운로드</a>
+          {% else %}
+          -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">등록된 버전이 없습니다.</p>
+  {% endif %}
+</section>
+{% endblock %}

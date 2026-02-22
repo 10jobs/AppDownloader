@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>공지사항</h1>
+  {% if notices %}
+    <ul class="notice-list">
+      {% for n in notices %}
+      <li>
+        <div class="notice-title">
+          {% if n.is_pinned %}<span class="pill">고정</span>{% endif %}
+          {{ n.title }}
+        </div>
+        <div class="notice-content">{{ n.content }}</div>
+        <div class="muted">{{ n.created_at }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">등록된 공지가 없습니다.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>앱 목록</h2>
+  {% if app_types %}
+  <table>
+    <thead>
+      <tr>
+        <th>앱 종류</th>
+        <th>설명</th>
+        <th>최신 버전</th>
+        <th>다운로드</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in app_types %}
+      {% set latest = latest_map.get(app.id) %}
+      <tr>
+        <td><a href="/apps/{{ app.slug }}">{{ app.name }}</a></td>
+        <td>{{ app.description or '-' }}</td>
+        <td>{{ latest.version if latest else '-' }}</td>
+        <td>
+          {% if latest and latest.current_file %}
+          <a class="btn" href="/download/{{ latest.current_file.id }}">다운로드</a>
+          {% else %}
+          -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">등록된 앱 종류가 없습니다.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+data/app.db
+data/
+.pytest_cache/
+alembic/versions/__pycache__/

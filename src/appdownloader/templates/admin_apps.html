@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>앱 종류 관리</h1>
+  {% if message %}<p class="ok">{{ message }}</p>{% endif %}
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/admin/apps" class="stack">
+    <input type="hidden" name="app_type_id" value="" />
+    <label>앱 이름<input name="name" required /></label>
+    <label>슬러그(선택)<input name="slug" placeholder="비워두면 자동 생성" /></label>
+    <label>설명<textarea name="description" rows="3"></textarea></label>
+    <label><input type="checkbox" name="is_active" checked /> 활성 상태</label>
+    <button class="btn" type="submit">앱 종류 추가</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>등록된 앱 종류</h2>
+  {% if app_types %}
+  <table>
+    <thead>
+      <tr><th>ID</th><th>이름</th><th>슬러그</th><th>설명</th><th>상태</th><th>수정</th></tr>
+    </thead>
+    <tbody>
+      {% for app in app_types %}
+      <tr>
+        <td>{{ app.id }}</td>
+        <td>{{ app.name }}</td>
+        <td>{{ app.slug }}</td>
+        <td>{{ app.description or '-' }}</td>
+        <td>{{ '활성' if app.is_active else '비활성' }}</td>
+        <td>
+          <form method="post" action="/admin/apps" class="inline-edit">
+            <input type="hidden" name="app_type_id" value="{{ app.id }}" />
+            <input type="text" name="name" value="{{ app.name }}" required />
+            <input type="text" name="slug" value="{{ app.slug }}" />
+            <input type="text" name="description" value="{{ app.description or '' }}" />
+            <label><input type="checkbox" name="is_active" {% if app.is_active %}checked{% endif %} />활성</label>
+            <button class="btn" type="submit">수정</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">등록된 앱 종류가 없습니다.</p>
+  {% endif %}
+</section>
+{% endblock %}

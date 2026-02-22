@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>APK 업로드</h1>
+  {% if message %}<p class="ok">{{ message }}</p>{% endif %}
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/admin/apks/upload" enctype="multipart/form-data" class="stack">
+    <label>앱 종류
+      <select name="app_type_id" required>
+        <option value="">선택하세요</option>
+        {% for app in app_types %}
+        <option value="{{ app.id }}">{{ app.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>버전<input name="version" required placeholder="예: 1.2.3" /></label>
+    <label>릴리즈 노트<textarea name="release_note" rows="4"></textarea></label>
+    <label>APK 파일<input type="file" name="apk_file" accept=".apk" required /></label>
+    <button class="btn" type="submit">업로드</button>
+  </form>
+
+  {% if overwrite_prompt %}
+  <div class="warnbox">
+    <p><strong>중복 버전 감지:</strong> {{ overwrite_prompt.app_type_name }} / {{ overwrite_prompt.version }}</p>
+    <p>파일을 새 리비전으로 덮어쓰려면 확인하세요.</p>
+    <form method="post" action="/admin/apks/overwrite">
+      <input type="hidden" name="token" value="{{ overwrite_prompt.token }}" />
+      <button class="btn danger" type="submit">덮어쓰기 확인</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>최근 등록 버전</h2>
+  {% if versions %}
+  <table>
+    <thead>
+      <tr><th>앱</th><th>버전</th><th>리비전</th><th>파일명</th><th>크기(bytes)</th><th>등록시각</th></tr>
+    </thead>
+    <tbody>
+      {% for v in versions %}
+      <tr>
+        <td>{{ v.app_type.name }}</td>
+        <td>{{ v.version }}</td>
+        <td>{% if v.current_file %}r{{ v.current_file.revision_no }}{% else %}-{% endif %}</td>
+        <td>{{ v.current_file.original_filename if v.current_file else '-' }}</td>
+        <td>{{ v.current_file.file_size if v.current_file else '-' }}</td>
+        <td>{{ v.updated_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">등록된 버전이 없습니다.</p>
+  {% endif %}
+</section>
+{% endblock %}
